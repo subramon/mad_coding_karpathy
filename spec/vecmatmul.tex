@@ -1,0 +1,30 @@
+\documentclass[letterpaper,12pt]{article}
+\begin{document}
+\input{preamble}
+\input{conventions}
+
+%%--------------------------------------------
+Write a C function, called {\tt vecmatmul}, that takes as input
+\be
+\item \(x\), type is (\(M_1, n\), {\tt float})
+\item \(w\), type is (\(M_2, m, n\), {\tt float})
+\item \(n\), type is (\(M_0\), {\tt int})
+\item \(m\) type is (\(M_0\), {\tt int})
+\ee
+and returns 
+\be
+\item \(y\) /* type is (\(M_1, m\), {\tt float}) */ \\
+\ee
+such that 
+\be
+\item \(y_i \leftarrow \sum_{i=0}^{i=n-1} w[i][j] \times x[j]\) \\ 
+  \ee
+
+  \be
+\item Produce highly optimized C code.
+\item Use AVX2 intriniscs wherever possible.
+\item Assume that all pointers, \(x, w, y\), are aligned on 64-byte boundaries
+\item Assume that there is no overlap in the memory accessed using \(x, w, y\)
+  \ee
+
+\end{document}

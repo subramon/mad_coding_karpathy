@@ -1,0 +1,29 @@
+\documentclass[letterpaper,12pt]{article}
+\begin{document}
+\input{preamble}
+\input{conventions}
+
+%%--------------------------------------------
+Write a C function, called {\tt dotprod}, that takes as input
+\be
+\item \(x\), type is (\(M_1, n\), {\tt float})
+\item \(y\), type is (\(M_1, n\), {\tt float})
+\item \(n\), type is (\(M_0\), {\tt int})
+\ee
+and returns 
+\be
+\item \(s\), type is (\(M_0\), {\tt float})
+\ee
+such that 
+\be
+\item \(s \leftarrow \sum_i x_i \times y_i\) 
+  \ee
+
+  \be
+\item Produce highly optimized C code.
+\item Use AVX2 intriniscs wherever possible.
+\item Assume that all pointers, \(x, y\), are aligned on 64-byte boundaries
+\item Assume that there is no overlap in the memory accessed using \(x, y\)
+  \ee
+
+\end{document}

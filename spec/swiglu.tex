@@ -1,0 +1,27 @@
+\documentclass[letterpaper,12pt]{article}
+\begin{document}
+\input{preamble}
+\input{conventions}
+
+%%--------------------------------------------
+Write a C function, called {\tt swiglu}, that takes as input
+\be
+\item \(x\), type is (\(M_1, n\), {\tt float})
+\item \(y\), type is (\(M_1, n\), {\tt float})
+\item \(n\), type is (\(M_0\), {\tt int})
+\ee
+and updates \(x\) as follows
+\be
+\item \(x_i \leftarrow x_i \times y_i \times 
+  \frac{1}{1 + e^{x_i}}\)
+\ee
+
+  \be
+\item Produce highly optimized C code.
+\item Use AVX2 intriniscs wherever possible.
+\item Assume that all pointers, \(x, y\), are aligned on 64-byte boundaries
+\item Assume that there is no overlap in the memory accessed using \(x, y\)
+\item Assume that \(n\) is a multiple of (64 / {\tt sizeof(float}))
+  \ee
+
+\end{document}

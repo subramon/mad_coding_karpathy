@@ -1,0 +1,26 @@
+\documentclass[letterpaper,12pt]{article}
+\begin{document}
+\input{preamble}
+\input{conventions}
+
+%%--------------------------------------------
+Write a C function, called {\tt softmax}, that takes as input
+\be
+\item \(x\), type is (\(M_1, n\), {\tt float})
+\item \(n\), type is (\(M_0\), {\tt int})
+\ee
+and updates \(x\) as follows
+\be
+\item \(s \leftarrow \sum_i e^{x_i - max_i x_i}\)
+\item \(x_i \leftarrow \frac{x_i}{s}\)
+  \ee
+
+  \be
+\item Produce highly optimized C code.
+\item Use AVX2 intriniscs wherever possible.
+\item Assume that all pointers, \(x\), are aligned on 64-byte boundaries
+\item Assume that \(n\) is a multiple of (64 / {\tt sizeof(float)})
+\item Assume that there is no overlap in the memory accessed using \(x\)
+  \ee
+
+\end{document}

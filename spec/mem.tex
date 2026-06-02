@@ -1,0 +1,222 @@
+\documentclass[letterpaper,12pt]{article}
+\begin{document}
+\input{preamble}
+\input{conventions}
+
+\clearpage
+\subsection{Data Structures}
+See Section~\ref{state} and ~\ref{weights}.
+\subsection{Dimensions}
+\label{dimensions}
+The constants in Table~\ref{shapes} define the sizes of the various arrays
+described later. These are from the {\tt Config struct}.
+\begin{table}[hb]
+  \begin{tabular}{|l|l|l|} \hline \hline 
+    {\bf Math} & {\bf Code} & {\bf Explanation} \\ \hline 
+    \(n_L\)  & {\tt n\_layers} & number of layers in the network  \\ \hline 
+    \(n_S\)  & {\tt seq\_len} & max sequence length \\ \hline 
+    \(n_D\) & {\tt dim} &  transformer dimension \\ \hline 
+    \(n_H\) & \verb+n_heads+ & number of query heads \\ \hline
+    \(\nDKV\)  & {\tt kv\_dim} & \((n_D \times \nHKV)/n_H\) \\ \hline
+     XXXX   & {\tt hidden\_dim} &  for ffn layers \\ \hline 
+    \(n_V\) &  {\tt vocab\_size} &  vocabulary size \\ \hline 
+    \(\nHKV\)  & \verb+n_kv_heads+ & number of key/value heads \\ \hline
+    \(n_{H_0}\) & \verb+n_heads * head_size+ & \TBC \\ \hline 
+    \(n_{H_1}\) & \verb+n_kv_heads * head_size+ & \TBC \\ \hline 
+    \hline 
+\end{tabular}
+    \caption{Dimensions}
+    \label{shapes}
+\end{table}
+
+\section{State}
+\label{state}
+The state is represented by the data structures listed in
+Table~\ref{tbl_state_data}
+\begin{table}[h]
+  \begin{tabular}{|l|l|l|l|l|l|} \hline \hline
+    {\bf Name} & {\bf Shape} & {\bf Comment} & \(n_X\) & \(n_Y\) & \(n_Z\) \\ \hline
+    {\tt x} & 1D array & activation at current timestamp &  \(n_D\) & & \\ \hline
+    {\tt xb} & 1D array & like {\tt x} but inside residual branch & \(n_D\) & &
+    \\ \hline
+    {\tt xb2} & 1D array & like {\tt xb} & \(n_D\) & & \\ \hline
+    \hline
+    {\tt sq} & 1D array & \(n_H\) & & \\ \hline
+    {\tt sk} & 1D array & \(n_D\) & & \\ \hline
+    {\tt sk} & 1D array & \(n_D\) & & \\ \hline
+\hline
+    {\tt KC} & 3D array & keys of kv-cache & \(n_L\) & \(n_S\) & \(n_S\)  \\
+    \hline 
+    {\tt KV} & 3D array & values of kv-cache & \(n_L\) & \(n_S\) & \(n_S\)  \\ \hline 
+    \hline
+\end{tabular}
+  \caption{Data structures for state}
+  \label{tbl_state_data}
+\end{table}
+
+\section{Weights}
+\label{weights}
+The weights are represented by the data structures listed in
+Table~\ref{tbl_weights_data}
+
+\begin{table}
+  \begin{tabular}{|l|l|l|l|l|l|} \hline \hline
+    {\bf Name} & {\bf Shape} & {\bf Comment} & \(n_X\) & \(n_Y\) & \(n_Z\) \\ \hline
+    {\tt tet} & 2D array & Lookup table maps token IDs to vectors  & \(n_V\) & \(n_D\) & \\ \hline 
+    {\tt wk} & 3D array & key projections & \(n_L\) & \(n_D\) & \(n_{H_1}\) \\ \hline 
+    {\tt wv} & 3D array & value projections & \(n_L\) & \(n_D\) & \(n_{H_1}\) \\ \hline 
+
+    \hline
+\end{tabular}
+  \caption{Data structures for weights}
+  \label{tbl_weights_data}
+\end{table}
+
+  
+\section{Code}
+
+Given 
+\begin{enumerate}
+\item an integer \(p\) where \(0 \leq p < n_P\)
+\item an integer \(t\) where \(0 \leq t < n_V\)
+  \end{enumerate}
+
+%%--------------------------------------------
+  \subsection{rmsnorm}
+\begin{figure}[h]
+  \centering
+\fbox{
+  \begin{minipage}{6.5in}
+  \begin{tabbing} \hspace*{0.25in} \= \hspace*{0.25in} \=  \kill
+    {\tt function} rmsnorm(\+ \\
+    \(x\), /* type is (\(M_1, n\), {\tt float}) */ \\ 
+    \(w\)  /* type is (\(M_1, n\), {\tt float}) */ \- \\
+    ) \\
+    {\bf begin} \+ \\
+    \(y\) /* type is (\(M_1, n\), {\tt float}) */ \\
+    \(\epsilon = 10^{-5}\) /* type is (\(M_0\), {\tt float}) */ \\
+    \(s \leftarrow \frac{1}{\sqrt{\epsilon + \frac{\sum {x_i}^2}{n}}}\) \\
+    \(y_i \leftarrow w_i \times x_i \times s\) \\ 
+    {\bf return} y \- \\ 
+
+    {\bf end} \\ 
+\end{tabbing}
+  \caption{Pseudo-code for \(\rmsnorm()\) function}
+  \label{fn_rmsnorm}
+  \end{minipage}
+}
+\end{figure}
+\clearpage
+%%--------------------------------------------
+  \subsection{vecmatmul}
+\begin{figure}[h]
+  \centering
+\fbox{
+  \begin{minipage}{6.5in}
+  \begin{tabbing} \hspace*{0.25in} \= \hspace*{0.25in} \=  \kill
+    {\tt function} vecmatmul(\+ \\
+    \(x\), /* type is (\(M_1, n\), {\tt float}) */ \\ 
+    \(w\),  /* type is (\(M_2, m, n\), {\tt float}) */ \\
+    \(n\), /* type is (\(M_0\), {\tt float}) */ \\
+    \(m\) /* type is (\(M_0\), {\tt float}) */ \- \\
+    ) \\
+    {\bf begin} \+ \\
+    \(y\) /* type is (\(M_1, m\), {\tt float}) */ \\
+    \(y_i \leftarrow \sum_{i=0}^{i=n-1} w[i][j] \times x[j]\) \\ 
+    {\bf return} y \- \\ 
+    {\bf end} \\ 
+\end{tabbing}
+  \caption{Pseudo-code for {\tt vecmatmul()} function}
+  \label{fn_vecmatmul}
+  \end{minipage}
+}
+\end{figure}
+\clearpage
+%%--------------------------------------------
+  \subsection{rope}
+\begin{figure}[h]
+  \centering
+\fbox{
+  \begin{minipage}{6.5in}
+  \begin{tabbing} \hspace*{0.25in} \= \hspace*{0.25in} \=  \kill
+    {\tt function} rope(\+ \\
+    \(q\), /* type is (\(M_1, n\), {\tt float}) */ \\ 
+    \(k\),  /* type is (\(M_1, m, n\), {\tt float}) */ \\
+    \(n\), /* type is (\(M_0\), {\tt float}) */ \\
+    \(m\) /* type is (\(M_0\), {\tt float}) */ \- \\
+    ) \\
+    {\bf begin} \+ \\
+    \(y\) /* type is (\(M_1, m\), {\tt float}) */ \\
+    \(y_i \leftarrow \sum_{i=0}^{i=n-1} w[i][j] \times x[j]\) \\ 
+    {\bf return} y \- \\ 
+    {\bf end} \\ 
+\end{tabbing}
+  \caption{Pseudo-code for {\tt rope()} function}
+  \label{fn_rope}
+  \end{minipage}
+}
+\end{figure}
+\clearpage
+%%--------------------------------------------
+\subsection{forward}
+\begin{figure}[h]
+  \centering
+\fbox{
+  \begin{minipage}{6.5in}
+  \begin{tabbing} 
+    \hspace*{0.25in} \= \hspace*{0.25in} \=  
+    \hspace*{0.25in} \= \hspace*{0.25in} \=  
+    \kill
+    {\bf function} {\tt foo} ( \+ \\
+    {\bf integer} \(t\), \\
+    {\bf integer} \(p\) \- \\
+    ) \\
+    {\bf begin} \+ \\
+{\bf foreach} \(l \in \{0, 1, \ldots n_L-1\}\) {\bf do}  \+ \\ 
+
+  %% copy the token embedding into x
+  %% float* tet_ptr = mcr_2d_to_1d(w->token_embedding_table, token, ispc_dim);
+  %% memcpy(x, tet_ptr, ((size_t)dim*sizeof(float)));
+    \(x \leftarrow \tet[t]\) \\  
+    % rmsnorm(s->xb, x, w_rms_att_l, dim);
+    \(\xb \leftarrow \rmsnorm(x, \wrms[l])\) \\ 
+    \(\mathtt{q}[l] \leftarrow \vecmatmul(\xb, \wq[l])\) \\ 
+    \(\mathtt{k}[l] \leftarrow \vecmatmul(\xb, \wk[l])\) \\ 
+    \(\mathtt{v}[l] \leftarrow \vecmatmul(\xb, \wv[l])\) \- \\ 
+%%        matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
+%%        matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
+%%        matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
+    \\ 
+    {\bf endfor}  \- \\
+    {\bf end} 
+\end{tabbing}
+  \end{minipage}
+}
+  \caption{Pseudo-code for {\tt forward()} function}
+  \label{fn_forward}
+\end{figure}
+%      matmul(key_ptr, s->xb, w_k, dim, kv_dim);
+%      matmul(val_ptr, s->xb, w_v, dim, kv_dim);
+\clearpage
+
+\section{Instructions to LLM}
+For each of the functions listed in Table~\ref{list_of_fns}
+\begin{enumerate}
+  \item Write an optimized C function using AVX2 intrinsics and SIMD
+    instructions whenever possible.
+  \item Return a {\tt .c} file --- the definition
+  \item Return a {\tt .h} file --- the declaration
+\end{enumerate}
+\begin{table}
+\begin{tabular}{|l|l|} \hline \hline
+  {\bf Function} & Section Implemented  \\ \hline \hline
+  {\tt rmsnorm} & Section~\ref{fn_rmsnorm} \\ \hline
+  {\tt vecmatmul} & Section~\ref{fn_vecmatmul} \\ \hline
+  {\tt rope} & Section~\ref{fn_rope} \\ \hline
+%%  {\tt forward} & Section~\ref{fn_forward} \\ \hline
+\end{tabular}
+  \caption{Listing of functions}
+  \label{list_of_fns}
+\end{table}
+
+\end{document}

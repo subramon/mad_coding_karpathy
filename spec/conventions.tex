@@ -1,0 +1,61 @@
+\section{Conventions and Definitions}
+\subsection{Definitions}
+
+\begin{definition}
+  \label{scalar}
+  A scalar, \(M_0\) is defined using a type \(t_0\)
+\end{definition}
+
+\begin{definition}
+  \label{1D_matrix}
+  A vector or 1D matrix, \(M_1\), is defined using a type \(t_1\) and positive integer
+\(n_1\), representing the dimensions/shape.
+\begin{itemize}
+  \item \(M_1[j]\) is a scalar of type {\tt T} of size \(s_1\)
+\item \(M_1\) is stored as a linear array at address \(m_1\)
+  such that 
+    \begin{enumerate} 
+\item Address of \(M_1[j]  = m_1 + s_1 \times j\)
+\end{enumerate}
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+  \label{2D_matrix}
+  A 2D matrix, \(M_2\),  is defined using a type \(t_2\) and positive integers 
+\(n_X, n_Y\), representing the dimensions/shape.
+\begin{itemize}
+  \item \(M_2[i]\) is a 1D matrix of length \(n_Y\) and type \(t_2\)
+  \item \(M_2[i, j]\) is a scalar of type \(t_2\) and size \(s_2\)
+  \item \(M_2\) is stored as a linear array at address \(m_2\)
+  such that 
+    \begin{enumerate} 
+      \item Address of \(M_2[i] = m_2 + s_2 \times (i \times n_Y)\)
+      \item Address of \(M_2[i, j] = m_2 + 
+        s_2 \times (i \times n_Y + j)\)
+\end{enumerate}
+\end{itemize}
+\end{definition}
+
+\begin{definition}
+  \label{3D_matrix}
+  A 3D matrix, {\tt M}, is defined using a type {\tt T} and positive integers 
+\(n_X, n_Y, n_Z\), representing the dimensions/shape.
+\begin{itemize}
+  \item \(\mathtt{M}[x]\) is a 2D matrix of dimensions \(n_X, n_Y\) and type
+    {\tt T}
+  \item \(\mathtt{M}[x, y]\) is a vector of length \(n_S\) and type {\tt T}
+\item \(\mathtt{M}[x, y, z]\) is a scalar of type {\tt T}
+\item {\tt M} is stored as a linear array at address \(m_{\mathtt{M}}\)
+  such that 
+    \begin{enumerate} 
+    \item Address of \(\mathtt{M}[x] = 
+  m_{\mathtt{M}} + x \times (n_Y \times n_Z)\)
+\item Address of \(\mathtt{M}[x, y]  = 
+  m_{\mathtt{M}} + (x \times n_Y \times n_Z) + (y \times n_Z)\)
+\item Address of \(\mathtt{M}[x, y, z] = 
+  m_{\mathtt{M}} + (x \times n_X \times n_Y) + (y \times n_Z) + z\)
+\end{enumerate}
+\end{itemize}
+\end{definition}
+

@@ -1,0 +1,6 @@
+*.o
+_*
+run
+runq
+*.bin
+*.model
