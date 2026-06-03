@@ -2,18 +2,28 @@
 # example override to clang: make run CC=clang
 CC = gcc
 
-CFLAGS= -g 
+CFLAGS := -g 
 # CFLAGS= -O3
 # CFLAGS= -Ofast
 # the most basic way of building that is most likely to work on most systems
-CFLAGS += LLM_EXPT
+CFLAGS += -DLLM_EXPT
+
+INCS = -I./codegen/
 .PHONY: run
 
 run: run.c \
-	codegen/rmsnorm.c 
-	gcc -c run.c -o run.o 
-	gcc -c codegen/rmsnorm.c -mavx2 -mfma -o rmsnorm.o
-	$(CC) run.o rmsnorm.o -o rmsnorm -lm
+	codegen/rmsnorm.c  \
+	codegen/rope1.c  \
+	codegen/rope2.c 
+	gcc ${INCS} ${CFLAGS} -c run.c -o run.o 
+	gcc ${INCS} ${CFLAGS} -c codegen/rmsnorm.c -mavx2 -mfma -o rmsnorm.o
+	gcc ${INCS} ${CFLAGS} -c codegen/rope1.c -mavx2 -mfma -o rope1.o
+	gcc ${INCS} ${CFLAGS} -c codegen/rope2.c -mavx2 -mfma -o rope2.o
+	$(CC) run.o \
+		rmsnorm.o \
+		rope1.o \
+		rope2.o \
+		-o run -lm
 
 rundebug: run.c 
 	$(CC) -g -o run run.c -lm
