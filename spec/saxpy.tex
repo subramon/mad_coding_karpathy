@@ -4,26 +4,25 @@
 \input{conventions}
 
 %%--------------------------------------------
-Write a C function, called {\tt dotprod}, that takes as input
+Write a C function, called {\tt vvsincr}, that takes as input
 \be
 \item \(x\), type is (\(M_1, n\), {\tt float})
 \item \(y\), type is (\(M_1, n\), {\tt float})
+\item \(a\), type is (\(M_0\), {\tt float})
 \item \(n\), type is (\(M_0\), {\tt int})
 \ee
-and returns 
+and updates \(x\) as follows
 \be
-\item \(s\), type is (\(M_0\), {\tt float})
+\item \(x_i \leftarrow x_i + (a \times y_i)\)
 \ee
-such that 
-\be
-\item \(s \leftarrow \sum_i x_i \times y_i\) 
-  \ee
 
   \be
 \item Produce highly optimized C code.
 \item Use AVX2 intriniscs wherever possible.
-\item Do {\bf not} assume that pointers, \(x, y\), are aligned on 64-byte boundaries
+\item Do {\bf not} assume that all pointers, \(x, y\), are aligned on 64-byte boundaries
 \item Assume that there is no overlap in the memory accessed using \(x, y\)
+\item Do {\bf not} assume that \(n\) is a multiple of 
+  (64 / {\tt sizeof(float)})
   \ee
 
 \end{document}

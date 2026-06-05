@@ -18,9 +18,8 @@ and updates \(x\) as follows
   \be
 \item Produce highly optimized C code.
 \item Use AVX2 intriniscs wherever possible.
-\item Assume that all pointers, \(x\), are aligned on 64-byte boundaries
-\item Assume that \(n\) is a multiple of (64 / {\tt sizeof(float)})
-\item Assume that there is no overlap in the memory accessed using \(x\)
+\item Do {\bf NOT} assume that pointers, \(x\), are aligned on 64-byte boundaries
+\item Do {\bf NOT} assume that \(n\) is a multiple of (64 / {\tt sizeof(float)})
   \ee
 
 \end{document}

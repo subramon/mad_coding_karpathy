@@ -17,14 +17,14 @@ and returns
 such that 
 \be
 \item \(\epsilon = 10^{-5}\) 
-\item \(s \leftarrow \frac{1}{\sqrt{\epsilon + \frac{\sum {x_i}^2}{n}}}\) 
+\item \(s \leftarrow \frac{1}{\sqrt{(\epsilon + \frac{\sum {x_i}^2}{n})}}\) 
 \item \(y_i \leftarrow w_i \times x_i \times s\) \\ 
   \ee
 
   \be
 \item Produce highly optimized C code.
 \item Use AVX2 intriniscs wherever possible.
-\item Assume that all pointers, \(x, w, y\), are aligned on 64-byte boundaries
+\item Do {\bf NOT} asssume that any of the pointers, \(x, w, y\), are aligned on 64-byte boundaries
 \item Assume that there is no overlap in the memory accessed using \(x, w, y\)
   \ee
 

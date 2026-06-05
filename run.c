@@ -13,6 +13,12 @@
 #include "rmsnorm.h"
 #include "rope1.h"
 #include "rope2.h"
+#include "softmax.h"
+#include "vvincr.h"
+#include "saxpy.h"
+#include "vecmatmul.h"
+#include "dotprod.h"
+#include "swiglu.h"
 
 // ----------------------------------------------------------------------------
 // Transformer model
@@ -180,57 +186,6 @@ void free_transformer(Transformer* t) {
 // ----------------------------------------------------------------------------
 // neural net blocks; the dynamics of the Transformer
 
-#ifndef LLM_EXPT
-void rmsnorm(float* o, float* x, float* weight, int size) {
-    // calculate sum of squares
-    float ss = 0.0f;
-    for (int j = 0; j < size; j++) {
-        ss += x[j] * x[j];
-    }
-    ss /= size;
-    ss += 1e-5f;
-    ss = 1.0f / sqrtf(ss);
-    // normalize and scale
-    for (int j = 0; j < size; j++) {
-        o[j] = weight[j] * (ss * x[j]);
-    }
-}
-#endif
-
-void softmax(float* x, int size) {
-    // find max value (for numerical stability)
-    float max_val = x[0];
-    for (int i = 1; i < size; i++) {
-        if (x[i] > max_val) {
-            max_val = x[i];
-        }
-    }
-    // exp and sum
-    float sum = 0.0f;
-    for (int i = 0; i < size; i++) {
-        x[i] = expf(x[i] - max_val);
-        sum += x[i];
-    }
-    // normalize
-    for (int i = 0; i < size; i++) {
-        x[i] /= sum;
-    }
-}
-
-void matmul(float* xout, float* x, float* w, int n, int d) {
-    // W (d,n) @ x (n,) -> xout (d,)
-    // by far the most amount of time is spent inside this little function
-    int i;
-    #pragma omp parallel for private(i)
-    for (i = 0; i < d; i++) {
-        float val = 0.0f;
-        for (int j = 0; j < n; j++) {
-            val += w[i * n + j] * x[j];
-        }
-        xout[i] = val;
-    }
-}
-
 float* forward(Transformer* transformer, int token, int pos) {
 
     // a few convenience variables
@@ -260,9 +215,9 @@ float* forward(Transformer* transformer, int token, int pos) {
         s->v = s->value_cache + loff + pos * kv_dim;
 
         // qkv matmuls for this position
-        matmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
-        matmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
-        matmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
+        vecmatmul(s->q, s->xb, w->wq + l*dim*dim, dim, dim);
+        vecmatmul(s->k, s->xb, w->wk + l*dim*kv_dim, dim, kv_dim);
+        vecmatmul(s->v, s->xb, w->wv + l*dim*kv_dim, dim, kv_dim);
 
         // RoPE relative positional encoding: complex-valued rotate q and k in each head
 #ifdef LLM_EXPT
@@ -308,9 +263,13 @@ float* forward(Transformer* transformer, int token, int pos) {
                 // calculate the attention score as the 
                 // dot product of q and k RS dotprod
                 float score = 0.0f;
+#ifdef ORIGINAL 
                 for (int i = 0; i < head_size; i++) {
                     score += q[i] * k[i];
                 }
+#else
+                score = dotprod(q, k, head_size);
+#endif
                 score /= sqrtf(head_size);
                 // save the score to the attention buffer
                 att[t] = score;
@@ -328,30 +287,39 @@ float* forward(Transformer* transformer, int token, int pos) {
                 float* v = s->value_cache + loff + t * kv_dim + (h / kv_mul) * head_size;
                 // get the attention weight for this timestep
                 float a = att[t];
-                // accumulate the weighted value into xb RS vsadd
+                // accumulate the weighted value into xb RS saxpy
+#ifdef ORIGINAL
                 for (int i = 0; i < head_size; i++) {
                     xb[i] += a * v[i];
                 }
+#else
+                saxpy(xb, v, a, head_size);
+#endif
             }
         }
 
         // final matmul to get the output of the attention RS vecmatmul
-        matmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
+        vecmatmul(s->xb2, s->xb, w->wo + l*dim*dim, dim, dim);
 
         // residual connection back into x RS vvincr
+#ifdef ORIGINAL
         for (int i = 0; i < dim; i++) {
             x[i] += s->xb2[i];
         }
+#else
+        vvincr(x, s->xb2, dim);
+#endif
 
         // ffn rmsnorm RS rmsnorm
         rmsnorm(s->xb, x, w->rms_ffn_weight + l*dim, dim);
 
         // Now for FFN in PyTorch we have: self.w2(F.silu(self.w1(x)) * self.w3(x))
         // first calculate self.w1(x) and self.w3(x) RS vecmatmul
-        matmul(s->hb, s->xb, w->w1 + l*dim*hidden_dim, dim, hidden_dim);
-        matmul(s->hb2, s->xb, w->w3 + l*dim*hidden_dim, dim, hidden_dim);
+        vecmatmul(s->hb, s->xb, w->w1 + l*dim*hidden_dim, dim, hidden_dim);
+        vecmatmul(s->hb2, s->xb, w->w3 + l*dim*hidden_dim, dim, hidden_dim);
 
         // SwiGLU non-linearity RS swiglu
+#ifdef ORIGINAL 
         for (int i = 0; i < hidden_dim; i++) {
             float val = s->hb[i];
             // silu(x)=x*σ(x), where σ(x) is the logistic sigmoid
@@ -360,21 +328,28 @@ float* forward(Transformer* transformer, int token, int pos) {
             val *= s->hb2[i];
             s->hb[i] = val;
         }
+#else
+        swiglu(s->hb, s->hb2, hidden_dim);
+#endif
 
         // final matmul to get the output of the ffn RS vecmatmul
-        matmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
+        vecmatmul(s->xb, s->hb, w->w2 + l*dim*hidden_dim, hidden_dim, dim);
 
         // residual connection RS vvincr
+#ifdef ORIGINAL
         for (int i = 0; i < dim; i++) {
             x[i] += s->xb[i];
         }
+#else
+        vvincr(x, s->xb, dim);
+#endif
     }
 
     // final rmsnorm
     rmsnorm(x, x, w->rms_final_weight, dim);
 
     // classifier into logits
-    matmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
+    vecmatmul(s->logits, x, w->wcls, p->dim, p->vocab_size);
     return s->logits;
 }
 

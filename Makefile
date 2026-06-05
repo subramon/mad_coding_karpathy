@@ -5,22 +5,58 @@ CC = gcc
 CFLAGS := -g 
 # CFLAGS= -O3
 # CFLAGS= -Ofast
-# the most basic way of building that is most likely to work on most systems
-CFLAGS += -DLLM_EXPT
+# Exactly one of these should be defined
+# CFLAGS += -DKARPATHY
+# CFLAGS += -DGEMINI
+CFLAGS += -DDEEPSEEK
 
 INCS = -I./codegen/
 .PHONY: run
 
+all : run
+
+swiglu.o : codegen/swiglu.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/swiglu.c -mavx2 -mfma -o swiglu.o
+
+dotprod.o : codegen/dotprod.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/dotprod.c -mavx2 -mfma -o dotprod.o
+
+saxpy.o : codegen/saxpy.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/saxpy.c -mavx2 -mfma -o saxpy.o
+
+vvincr.o : codegen/vvincr.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/vvincr.c -mavx2 -mfma -o vvincr.o
+
+rmsnorm.o : codegen/rmsnorm.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/rmsnorm.c -mavx2 -mfma -o rmsnorm.o
+
+softmax.o : codegen/softmax.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/softmax.c -mavx2 -mfma -o softmax.o
+
+vecmatmul.o : codegen/vecmatmul.c 
+	gcc ${INCS} ${CFLAGS} -c codegen/vecmatmul.c -mavx2 -mfma -o vecmatmul.o
+
 run: run.c \
-	codegen/rmsnorm.c  \
+	rmsnorm.o \
+	softmax.o  \
+	vvincr.o  \
+	saxpy.o  \
+	dotprod.o  \
+	swiglu.o  \
+	vecmatmul.o  \
 	codegen/rope1.c  \
 	codegen/rope2.c 
 	gcc ${INCS} ${CFLAGS} -c run.c -o run.o 
-	gcc ${INCS} ${CFLAGS} -c codegen/rmsnorm.c -mavx2 -mfma -o rmsnorm.o
 	gcc ${INCS} ${CFLAGS} -c codegen/rope1.c -mavx2 -mfma -o rope1.o
 	gcc ${INCS} ${CFLAGS} -c codegen/rope2.c -mavx2 -mfma -o rope2.o
 	$(CC) run.o \
 		rmsnorm.o \
+		softmax.o \
+		vvincr.o  \
+		saxpy.o  \
+		dotprod.o  \
+		swiglu.o  \
+		vecmatmul.o \
 		rope1.o \
 		rope2.o \
 		-o run -lm

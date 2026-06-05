@@ -13,7 +13,7 @@ Write a C function, called {\tt vecmatmul}, that takes as input
 \ee
 and returns 
 \be
-\item \(y\) /* type is (\(M_1, m\), {\tt float}) */ \\
+\item \(y\), type is (\(M_1, m\), {\tt float}) 
 \ee
 such that 
 \be
@@ -23,7 +23,7 @@ such that
   \be
 \item Produce highly optimized C code.
 \item Use AVX2 intriniscs wherever possible.
-\item Assume that all pointers, \(x, w, y\), are aligned on 64-byte boundaries
+\item Do {\bf not} assume that pointers, \(x, w, y\), are aligned on 64-byte boundaries
 \item Assume that there is no overlap in the memory accessed using \(x, w, y\)
   \ee
 

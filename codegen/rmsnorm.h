@@ -1,8 +1,6 @@
-#ifdef LLM_EXPT
 extern void rmsnorm(
-    const float* __restrict__ x, 
-    const float* __restrict__ w, 
-    float* __restrict__ y,
+    float* restrict y, 
+    const float* restrict x, 
+    const float* restrict w, 
     int n
     );
-#endif
