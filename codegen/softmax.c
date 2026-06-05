@@ -2,7 +2,7 @@
 
 // Exactly one of these should be defined
 
-#ifdef DEEPSEEK
+#if DEEPSEEK || KARPATHY
 #include <math.h>
 void softmax(float* x, int size) {
     // find max value (for numerical stability)
@@ -24,7 +24,7 @@ void softmax(float* x, int size) {
     }
 }
 #endif
-#ifdef KARPATHY
+#ifdef XXXXXXXX 
 #include <immintrin.h>
 #include <math.h>
 #include <stddef.h>

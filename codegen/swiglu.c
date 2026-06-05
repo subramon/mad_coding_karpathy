@@ -1,6 +1,6 @@
 #include "swiglu.h"
 
-#ifdef KARPATHY // TODO PO 
+#ifdef KARPATHY 
 #include <math.h>
 void
 swiglu(

@@ -1,0 +1,8 @@
+
+One day, a boy named Tim found a journal. It was a journal. Tim wanted to write in the journal. He looked at the journal and saw a big tree. Tim thought it would be fun to write about the tree.
+Tim went to his friend, Sam. "Look at my journal," said Tim. "I want to write about the tree." Sam was worried. "You should tell me how big the tree is." Sam said, "I will tell you, but you must promise to be careful."
+Tim started to write about the tree. But he was not careful. He ran and jumped on Sam. Sam fell down and started to cry. Tim felt bad.
+Tim learned that he should always be careful when writing. He promised to be more careful and never write near big trees again.
+
+ run stories15M.bin -s 123456789
+achieved tok/s: 40.472175
